@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -15,9 +16,15 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 func (cfg *apiConfig) getFileserverHits(writer http.ResponseWriter, request *http.Request) {
-	writer.Header().Add(http.CanonicalHeaderKey("content-type"), "text/plain; charset=utf-8")
-	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits)))
+	writer.Header().Add(http.CanonicalHeaderKey("content-type"), "text/html; charset=utf-8")
+	htmlText, err := os.ReadFile("metrics.html")
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		writer.Write([]byte("Error reading file"))
+	} else {
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte(fmt.Sprintf(string(htmlText), cfg.fileserverHits)))
+	}
 }
 
 func (cfg *apiConfig) resetFileserverHits(writer http.ResponseWriter, request *http.Request) {

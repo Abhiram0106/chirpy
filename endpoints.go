@@ -6,7 +6,8 @@ const (
 	appPath          string = "/app/*"
 	stripAppPath     string = "/app"
 	apiPath          string = "/api"
+	adminPath        string = "/admin"
 	healthPath       string = apiPath + "/healthz"
-	metricsPath      string = apiPath + "/metrics"
+	metricsPath      string = adminPath + "/metrics"
 	resetMetricsPath string = apiPath + "/reset"
 )
