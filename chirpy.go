@@ -8,17 +8,29 @@ import (
 func startServer() {
 
 	filepathRoot := "."
+	healthPath := "/healthz"
 	port := "8080"
-	serveMuxer := http.NewServeMux()
+	mux := http.NewServeMux()
+
+	fileHandler := http.FileServer(http.Dir(filepathRoot))
+	mux.Handle("/app/*", http.StripPrefix("/app", fileHandler))
+	mux.HandleFunc(healthPath, chirpyHandlerFunc)
 
 	server := http.Server{
 		Addr:    ":" + port,
-		Handler: serveMuxer,
+		Handler: mux,
 	}
-
-	fileHandler := http.FileServer(http.Dir(filepathRoot))
-	serveMuxer.Handle("/", fileHandler)
 
 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(server.ListenAndServe())
+}
+
+func chirpyHandlerFunc(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set(http.CanonicalHeaderKey("content-type"), "text/plain; charset=utf-8")
+	writer.WriteHeader(http.StatusOK)
+	huh, yeah := writer.Write([]byte("OK"))
+	log.Println(huh)
+	if yeah != nil {
+		log.Println("error = " + yeah.Error())
+	}
 }
