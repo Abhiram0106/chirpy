@@ -12,4 +12,6 @@ const (
 	metricsPath      string = adminPath + "/metrics"
 	resetMetricsPath string = apiPath + "/reset"
 	chirpsPath       string = apiPath + "/chirps"
+	chirpIDWildCard  string = "chirpID"
+	chirpByIDPath    string = chirpsPath + "/{" + chirpIDWildCard + "}"
 )

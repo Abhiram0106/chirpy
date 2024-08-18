@@ -46,7 +46,7 @@ func postChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, newChirp)
+	respondWithJSON(w, http.StatusAccepted, newChirp)
 }
 
 func chirpProfanityFilter(chirp string) (cleanedChirp string) {
