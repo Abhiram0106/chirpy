@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/Abhiram0106/chirpy/internal/database"
 )
 
-func validateChirp(w http.ResponseWriter, r *http.Request) {
+func postChirp(w http.ResponseWriter, r *http.Request) {
 
 	type chirp struct {
 		Body string `json:"body"`
@@ -18,7 +20,7 @@ func validateChirp(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&chirpVal)
 
 	if err != nil {
-		log.Printf("ValidChirp Error decoding %s", err)
+		log.Printf("PostChirp Error decoding %s\n", err)
 		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
 		return
 	}
@@ -28,13 +30,23 @@ func validateChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cleanedChirp := struct {
-		CleanedChirp string `json:"cleaned_body"`
-	}{
-		CleanedChirp: chirpProfanityFilter(chirpVal.Body),
+	DBConnection, DBErr := database.NewDB(databasePath)
+
+	if DBErr != nil {
+		log.Println(DBErr.Error())
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
+		return
 	}
 
-	respondWithJSON(w, http.StatusOK, cleanedChirp)
+	newChirp, DBCreateChirpErr := DBConnection.CreateChirp(chirpProfanityFilter(chirpVal.Body))
+
+	if DBCreateChirpErr != nil {
+		log.Println(DBCreateChirpErr.Error())
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, newChirp)
 }
 
 func chirpProfanityFilter(chirp string) (cleanedChirp string) {

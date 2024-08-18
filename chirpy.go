@@ -22,7 +22,8 @@ func startServer() {
 	mux.HandleFunc(http.MethodGet+" "+healthPath, chirpyHandlerFunc)
 	mux.HandleFunc(http.MethodGet+" "+metricsPath, cfg.getFileserverHits)
 	mux.HandleFunc(resetMetricsPath, cfg.resetFileserverHits)
-	mux.HandleFunc(http.MethodPost+" "+validateChirpPath, validateChirp)
+	mux.HandleFunc(http.MethodGet+" "+chirpsPath, getChirps)
+	mux.HandleFunc(http.MethodPost+" "+chirpsPath, postChirp)
 
 	server := http.Server{
 		Addr:    ":" + port,
