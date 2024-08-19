@@ -87,6 +87,10 @@ func (db *DB) CreateUser(email string, password string) (User, error) {
 		return User{}, err
 	}
 
+	if _, exists := database.FindUserByEmail(email); exists {
+		return User{}, errors.New("Email in use")
+	}
+
 	newUserId := len(database.Users) + 1
 
 	hashedPassword, hashingErr := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -135,6 +139,32 @@ func (db *DB) GetUsers() ([]User, error) {
 	}
 
 	return users, nil
+}
+
+func (db *DB) GetUserByEmailAndPassword(email string, password string) (User, error) {
+
+	database, err := db.loadDB()
+
+	if err != nil {
+		return User{}, err
+	}
+
+	interUser, exists := database.FindUserByEmail(email)
+
+	if !exists {
+		return User{}, errors.New("Invalid email or password")
+	}
+
+	if passwordErr := bcrypt.CompareHashAndPassword(interUser.Password, []byte(password)); passwordErr != nil {
+		return User{}, errors.New("Invalid email or password")
+	}
+
+	user := User{
+		ID:    interUser.ID,
+		Email: interUser.Email,
+	}
+
+	return user, nil
 }
 
 func (db *DB) ensureDB() error {

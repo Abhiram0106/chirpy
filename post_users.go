@@ -55,7 +55,7 @@ func postUsers(w http.ResponseWriter, r *http.Request) {
 
 	if createUserErr != nil {
 		log.Println(createUserErr)
-		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
+		respondWithError(w, http.StatusInternalServerError, createUserErr.Error())
 		return
 	}
 

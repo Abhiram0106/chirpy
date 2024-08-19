@@ -15,4 +15,5 @@ const (
 	chirpIDWildCard  string = "chirpID"
 	chirpByIDPath    string = chirpsPath + "/{" + chirpIDWildCard + "}"
 	usersPath        string = apiPath + "/users"
+	loginPath        string = apiPath + "/login"
 )
