@@ -15,7 +15,6 @@ func main() {
 		err := os.Remove(databasePath)
 		if err != nil {
 			log.Println(err)
-			return
 		}
 	}
 

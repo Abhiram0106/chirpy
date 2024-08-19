@@ -11,7 +11,8 @@ import (
 )
 
 type userRequest struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func postUsers(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +51,7 @@ func postUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser, createUserErr := newDBConnection.CreateUser(userReq.Email)
+	newUser, createUserErr := newDBConnection.CreateUser(userReq.Email, userReq.Password)
 
 	if createUserErr != nil {
 		log.Println(createUserErr)
@@ -63,8 +64,8 @@ func postUsers(w http.ResponseWriter, r *http.Request) {
 
 func (u *userRequest) validate() error {
 
-	if u.Email == "" {
-		return errors.New("Invalid email")
+	if u.Email == "" || u.Password == "" {
+		return errors.New("Both email and password are required")
 	}
 
 	return nil

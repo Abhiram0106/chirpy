@@ -3,10 +3,17 @@ package database
 import (
 	"encoding/json"
 	"errors"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"os"
 	"sync"
 )
+
+type internalUser struct {
+	ID       int
+	Email    string
+	Password []byte
+}
 
 type DB struct {
 	path string
@@ -72,7 +79,7 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	return chirps, nil
 }
 
-func (db *DB) CreateUser(email string) (User, error) {
+func (db *DB) CreateUser(email string, password string) (User, error) {
 
 	database, err := db.loadDB()
 
@@ -82,17 +89,29 @@ func (db *DB) CreateUser(email string) (User, error) {
 
 	newUserId := len(database.Users) + 1
 
-	newUser := User{
-		ID:    newUserId,
-		Email: email,
+	hashedPassword, hashingErr := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	if hashingErr != nil {
+		return User{}, hashingErr
 	}
 
-	database.Users[newUserId] = newUser
+	newInternalUser := internalUser{
+		ID:       newUserId,
+		Email:    email,
+		Password: hashedPassword,
+	}
+
+	database.Users[newUserId] = newInternalUser
 
 	writeDBError := db.writeDB(database)
 
 	if writeDBError != nil {
 		return User{}, writeDBError
+	}
+
+	newUser := User{
+		ID:    newUserId,
+		Email: email,
 	}
 
 	return newUser, nil
@@ -109,7 +128,10 @@ func (db *DB) GetUsers() ([]User, error) {
 	users := []User{}
 
 	for _, user := range database.Users {
-		users = append(users, user)
+		users = append(users, User{
+			ID:    user.ID,
+			Email: user.Email,
+		})
 	}
 
 	return users, nil
@@ -136,7 +158,7 @@ func (db *DB) ensureDB() error {
 
 	emptyDB := DBStructure{
 		Chirps: make(map[int]Chirp),
-		Users:  make(map[int]User),
+		Users:  make(map[int]internalUser),
 	}
 
 	dbJson, marshalErr := json.Marshal(emptyDB)
