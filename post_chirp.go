@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
@@ -9,11 +10,11 @@ import (
 	"github.com/Abhiram0106/chirpy/internal/database"
 )
 
-func postChirp(w http.ResponseWriter, r *http.Request) {
+type chirp struct {
+	Body string `json:"body"`
+}
 
-	type chirp struct {
-		Body string `json:"body"`
-	}
+func postChirp(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 	chirpVal := chirp{}
@@ -27,6 +28,11 @@ func postChirp(w http.ResponseWriter, r *http.Request) {
 
 	if len(chirpVal.Body) > 140 {
 		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
+		return
+	}
+
+	if validationErr := chirpVal.validate(); validationErr != nil {
+		respondWithError(w, http.StatusBadRequest, validationErr.Error())
 		return
 	}
 
@@ -69,4 +75,11 @@ func chirpProfanityFilter(chirp string) (cleanedChirp string) {
 	log.Println(cleanedChirp)
 
 	return
+}
+
+func (c *chirp) validate() error {
+	if c.Body == "" {
+		return errors.New("body can't be empty")
+	}
+	return nil
 }

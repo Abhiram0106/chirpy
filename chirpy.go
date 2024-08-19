@@ -25,6 +25,7 @@ func startServer() {
 	mux.HandleFunc(http.MethodGet+" "+chirpsPath, getChirps)
 	mux.HandleFunc(http.MethodPost+" "+chirpsPath, postChirp)
 	mux.HandleFunc(http.MethodGet+" "+chirpByIDPath, getChirps)
+	mux.HandleFunc(http.MethodPost+" "+usersPath, postUsers)
 
 	server := http.Server{
 		Addr:    ":" + port,

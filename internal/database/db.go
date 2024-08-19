@@ -72,6 +72,49 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	return chirps, nil
 }
 
+func (db *DB) CreateUser(email string) (User, error) {
+
+	database, err := db.loadDB()
+
+	if err != nil {
+		return User{}, err
+	}
+
+	newUserId := len(database.Users) + 1
+
+	newUser := User{
+		ID:    newUserId,
+		Email: email,
+	}
+
+	database.Users[newUserId] = newUser
+
+	writeDBError := db.writeDB(database)
+
+	if writeDBError != nil {
+		return User{}, writeDBError
+	}
+
+	return newUser, nil
+}
+
+func (db *DB) GetUsers() ([]User, error) {
+
+	database, err := db.loadDB()
+
+	if err != nil {
+		return nil, err
+	}
+
+	users := []User{}
+
+	for _, user := range database.Users {
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
 func (db *DB) ensureDB() error {
 
 	defer db.mux.Unlock()
@@ -93,6 +136,7 @@ func (db *DB) ensureDB() error {
 
 	emptyDB := DBStructure{
 		Chirps: make(map[int]Chirp),
+		Users:  make(map[int]User),
 	}
 
 	dbJson, marshalErr := json.Marshal(emptyDB)

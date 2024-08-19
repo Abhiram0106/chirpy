@@ -14,4 +14,5 @@ const (
 	chirpsPath       string = apiPath + "/chirps"
 	chirpIDWildCard  string = "chirpID"
 	chirpByIDPath    string = chirpsPath + "/{" + chirpIDWildCard + "}"
+	usersPath        string = apiPath + "/users"
 )
