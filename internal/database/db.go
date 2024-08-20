@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -211,6 +212,73 @@ func (db *DB) UpdateUser(userID int, email string, password string) (User, error
 	return updatedUser, nil
 }
 
+func (db *DB) AddRefreshToken(token string, expires_at time.Time, userID int) error {
+
+	database, loadDBErr := db.loadDB()
+
+	if loadDBErr != nil {
+		return loadDBErr
+	}
+
+	database.RefreshTokens[token] = timeToID{TokenExpiresAt: expires_at, UserID: userID}
+
+	dbWriteErr := db.writeDB(database)
+
+	if dbWriteErr != nil {
+		return dbWriteErr
+	}
+
+	return nil
+}
+
+func (db *DB) IsRefreshTokenValid(token string) (userID int, err error) {
+
+	database, loadDBErr := db.loadDB()
+
+	if loadDBErr != nil {
+		return 0, loadDBErr
+	}
+
+	tokenMetaData, exists := database.RefreshTokens[token]
+	if !exists {
+		return 0, errors.New("Token doesn't exist")
+	}
+
+	if tokenMetaData.TokenExpiresAt.Before(time.Now().UTC()) {
+		return 0, errors.New("Token has expired")
+	}
+
+	internalUser, exists := database.Users[tokenMetaData.UserID]
+
+	if !exists {
+		return 0, errors.New("User doesn't exist")
+	}
+
+	return internalUser.ID, nil
+}
+
+func (db *DB) RevokeRefreshToken(token string) error {
+
+	database, loadDBErr := db.loadDB()
+
+	if loadDBErr != nil {
+		return loadDBErr
+	}
+
+	if _, exists := database.RefreshTokens[token]; !exists {
+		return errors.New("Token doesn't exist")
+	}
+	delete(database.RefreshTokens, token)
+
+	dbWriteErr := db.writeDB(database)
+
+	if dbWriteErr != nil {
+		return dbWriteErr
+	}
+
+	return nil
+}
+
 func (db *DB) ensureDB() error {
 
 	defer db.mux.Unlock()
@@ -231,8 +299,9 @@ func (db *DB) ensureDB() error {
 	log.Println("DATABASE DOESN'T EXIST")
 
 	emptyDB := DBStructure{
-		Chirps: make(map[int]Chirp),
-		Users:  make(map[int]internalUser),
+		Chirps:        make(map[int]Chirp),
+		Users:         make(map[int]internalUser),
+		RefreshTokens: make(map[string]timeToID),
 	}
 
 	dbJson, marshalErr := json.Marshal(emptyDB)

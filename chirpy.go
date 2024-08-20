@@ -26,6 +26,8 @@ func startServer(cfg *apiConfig) {
 	mux.HandleFunc(http.MethodPost+" "+usersPath, postUsers)
 	mux.Handle(http.MethodPost+" "+loginPath, &PostLoginHandler{jwtSecret: cfg.jwtSecret})
 	mux.Handle(http.MethodPut+" "+usersPath, &PutUsersHandler{jwtSecret: cfg.jwtSecret})
+	mux.Handle(http.MethodPost+" "+refreshJWTPath, &RefreshJWTHandler{jwtSecret: cfg.jwtSecret})
+	mux.HandleFunc(http.MethodPost+" "+revokeRefreshTokenPath, revokeRefreshToken)
 
 	server := http.Server{
 		Addr:    ":" + port,

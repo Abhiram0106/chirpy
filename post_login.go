@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log"
@@ -17,9 +19,8 @@ type PostLoginHandler struct {
 }
 
 type loginRequest struct {
-	Email            string `json:"email"`
-	Password         string `json:"password"`
-	ExpiresInSeconds int    `json:"expires_in_seconds"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (h *PostLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -58,16 +59,12 @@ func (h *PostLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if loginReq.ExpiresInSeconds == 0 {
-		loginReq.ExpiresInSeconds = 24 * 60 * 60
-	}
-
 	jwtoken := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
 		jwt.RegisteredClaims{
 			Issuer:    "chirpy",
 			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Duration(loginReq.ExpiresInSeconds) * time.Second)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(1 * time.Hour)),
 			Subject:   strconv.Itoa(user.ID),
 		})
 
@@ -80,6 +77,25 @@ func (h *PostLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user.JWT = signedJWTString
+	random32bytes := make([]byte, 32)
+	_, randErr := rand.Read(random32bytes)
 
+	if randErr != nil {
+		log.Println(randErr)
+		respondWithError(w, http.StatusInternalServerError, randErr.Error())
+		return
+	}
+
+	refreshToken := hex.EncodeToString(random32bytes)
+
+	addTokenToDBErr := dbConnection.AddRefreshToken(refreshToken, time.Now().AddDate(0, 2, 0), user.ID)
+
+	if addTokenToDBErr != nil {
+		log.Println(addTokenToDBErr)
+		respondWithError(w, http.StatusInternalServerError, addTokenToDBErr.Error())
+		return
+	}
+
+	user.RefreshToken = refreshToken
 	respondWithJSON(w, http.StatusOK, user)
 }
