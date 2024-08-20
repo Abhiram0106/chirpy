@@ -4,9 +4,16 @@ import (
 	"flag"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+
+	if secretsErr := godotenv.Load(); secretsErr != nil {
+		log.Fatal(secretsErr)
+	}
+
 	dbg := flag.Bool("debug", false, "Enable debug mode")
 	flag.Parse()
 	if *dbg {
@@ -18,5 +25,10 @@ func main() {
 		}
 	}
 
-	startServer()
+	cfg := &apiConfig{
+		fileserverHits: 0,
+		jwtSecret:      os.Getenv("JWT_SECRET"),
+	}
+
+	startServer(cfg)
 }

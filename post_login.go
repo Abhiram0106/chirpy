@@ -5,16 +5,24 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/Abhiram0106/chirpy/internal/database"
+	"github.com/golang-jwt/jwt/v5"
 )
 
-type loginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type PostLoginHandler struct {
+	jwtSecret string
 }
 
-func postLogin(w http.ResponseWriter, r *http.Request) {
+type loginRequest struct {
+	Email            string `json:"email"`
+	Password         string `json:"password"`
+	ExpiresInSeconds int    `json:"expires_in_seconds"`
+}
+
+func (h *PostLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	body, readErr := io.ReadAll(r.Body)
 
@@ -49,6 +57,29 @@ func postLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusUnauthorized, getUsersErr.Error())
 		return
 	}
+
+	if loginReq.ExpiresInSeconds == 0 {
+		loginReq.ExpiresInSeconds = 24 * 60 * 60
+	}
+
+	jwtoken := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		jwt.RegisteredClaims{
+			Issuer:    "chirpy",
+			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Duration(loginReq.ExpiresInSeconds) * time.Second)),
+			Subject:   strconv.Itoa(user.ID),
+		})
+
+	signedJWTString, signingErr := jwtoken.SignedString([]byte(h.jwtSecret))
+
+	if signingErr != nil {
+		log.Println(signingErr)
+		respondWithError(w, http.StatusInternalServerError, signingErr.Error())
+		return
+	}
+
+	user.JWT = signedJWTString
 
 	respondWithJSON(w, http.StatusOK, user)
 }
