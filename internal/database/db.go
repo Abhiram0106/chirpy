@@ -3,10 +3,11 @@ package database
 import (
 	"encoding/json"
 	"errors"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"os"
 	"sync"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type internalUser struct {
@@ -165,6 +166,49 @@ func (db *DB) GetUserByEmailAndPassword(email string, password string) (User, er
 	}
 
 	return user, nil
+}
+
+func (db *DB) UpdateUser(userID int, email string, password string) (User, error) {
+
+	database, loadDBErr := db.loadDB()
+
+	if loadDBErr != nil {
+		return User{}, loadDBErr
+	}
+
+	user := database.Users[userID]
+
+	if _, exists := database.FindUserByEmail(email); exists && user.Email != email {
+		return User{}, errors.New("Email in use")
+	}
+
+	if len(email) != 0 {
+		user.Email = email
+	}
+
+	if len(password) != 0 {
+		hashedPassword, hashingErr := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+		if hashingErr != nil {
+			return User{}, hashingErr
+		}
+		user.Password = hashedPassword
+	}
+
+	database.Users[userID] = user
+
+	writeErr := db.writeDB(database)
+
+	if writeErr != nil {
+		return User{}, writeErr
+	}
+
+	updatedUser := User{
+		ID:    user.ID,
+		Email: user.Email,
+	}
+
+	return updatedUser, nil
 }
 
 func (db *DB) ensureDB() error {
