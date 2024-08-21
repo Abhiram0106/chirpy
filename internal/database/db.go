@@ -66,7 +66,7 @@ func (db *DB) CreateChirp(body string, authorID int) (Chirp, error) {
 	return newChirp, nil
 }
 
-func (db *DB) GetChirps(authorID int) ([]Chirp, error) {
+func (db *DB) GetChirps(authorID int, sortMethod string) ([]Chirp, error) {
 
 	database, err := db.loadDB()
 
@@ -87,7 +87,11 @@ func (db *DB) GetChirps(authorID int) ([]Chirp, error) {
 	}
 
 	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].ID < chirps[j].ID
+		if sortMethod == "desc" {
+			return chirps[i].ID > chirps[j].ID
+		} else {
+			return chirps[i].ID < chirps[j].ID
+		}
 	})
 
 	return chirps, nil

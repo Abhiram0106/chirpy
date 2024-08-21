@@ -11,6 +11,7 @@ import (
 func getChirps(w http.ResponseWriter, r *http.Request) {
 
 	authorIDString := r.URL.Query().Get("author_id")
+	sortMethod := r.URL.Query().Get("sort")
 
 	DBConnection, dbConnectionErr := database.NewDB(databasePath)
 
@@ -41,7 +42,7 @@ func getChirps(w http.ResponseWriter, r *http.Request) {
 
 	authorID, _ := strconv.Atoi(authorIDString)
 
-	chirps, getChirpsErr := DBConnection.GetChirps(authorID)
+	chirps, getChirpsErr := DBConnection.GetChirps(authorID, sortMethod)
 
 	if getChirpsErr != nil {
 		log.Println(getChirpsErr.Error())
