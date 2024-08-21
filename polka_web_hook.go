@@ -4,11 +4,28 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/Abhiram0106/chirpy/internal/database"
 )
 
-func postPolkaWebhook(w http.ResponseWriter, r *http.Request) {
+type PostPolkaWebhook struct {
+	polkaApiKey string
+}
+
+func (h *PostPolkaWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	headerAuth := strings.Fields(r.Header.Get("Authorization"))
+
+	if len(headerAuth) != 2 {
+		respondWithError(w, http.StatusUnauthorized, "Invalid API key")
+		return
+	}
+
+	if headerAuth[1] != h.polkaApiKey {
+		respondWithError(w, http.StatusUnauthorized, "Invalid API key")
+		return
+	}
 
 	type webhookRequest struct {
 		Event string `json:"event"`

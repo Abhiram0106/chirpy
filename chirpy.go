@@ -8,6 +8,7 @@ import (
 type apiConfig struct {
 	fileserverHits int
 	jwtSecret      string
+	polkaApiKey    string
 }
 
 func startServer(cfg *apiConfig) {
@@ -29,7 +30,7 @@ func startServer(cfg *apiConfig) {
 	mux.Handle(http.MethodPut+" "+usersPath, &PutUsersHandler{jwtSecret: cfg.jwtSecret})
 	mux.Handle(http.MethodPost+" "+refreshJWTPath, &RefreshJWTHandler{jwtSecret: cfg.jwtSecret})
 	mux.HandleFunc(http.MethodPost+" "+revokeRefreshTokenPath, postRevokeRefreshToken)
-	mux.HandleFunc(http.MethodPost+" "+polkaWebhookPath, postPolkaWebhook)
+	mux.Handle(http.MethodPost+" "+polkaWebhookPath, &PostPolkaWebhook{polkaApiKey: cfg.polkaApiKey})
 
 	server := http.Server{
 		Addr:    ":" + port,

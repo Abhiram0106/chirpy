@@ -28,6 +28,7 @@ func main() {
 	cfg := &apiConfig{
 		fileserverHits: 0,
 		jwtSecret:      os.Getenv("JWT_SECRET"),
+		polkaApiKey:    os.Getenv("POLKA_API_KEY"),
 	}
 
 	startServer(cfg)
