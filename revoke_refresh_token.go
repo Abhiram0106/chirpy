@@ -8,7 +8,7 @@ import (
 	"github.com/Abhiram0106/chirpy/internal/database"
 )
 
-func revokeRefreshToken(w http.ResponseWriter, r *http.Request) {
+func postRevokeRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	authHeader := strings.Fields(r.Header.Get("Authorization"))
 

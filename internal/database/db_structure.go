@@ -3,8 +3,8 @@ package database
 import "time"
 
 type timeAndID struct {
-	TokenExpiresAt time.Time
-	UserID         int
+	TokenExpiresAt time.Time `json:"token_expires_at"`
+	UserID         int       `json:"user_id"`
 }
 
 type DBStructure struct {

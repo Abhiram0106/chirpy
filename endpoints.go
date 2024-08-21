@@ -18,4 +18,5 @@ const (
 	loginPath              string = apiPath + "/login"
 	refreshJWTPath         string = apiPath + "/refresh"
 	revokeRefreshTokenPath string = apiPath + "/revoke"
+	polkaWebhookPath       string = apiPath + "/polka/webhook"
 )

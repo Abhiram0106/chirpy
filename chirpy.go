@@ -28,7 +28,8 @@ func startServer(cfg *apiConfig) {
 	mux.Handle(http.MethodPost+" "+loginPath, &PostLoginHandler{jwtSecret: cfg.jwtSecret})
 	mux.Handle(http.MethodPut+" "+usersPath, &PutUsersHandler{jwtSecret: cfg.jwtSecret})
 	mux.Handle(http.MethodPost+" "+refreshJWTPath, &RefreshJWTHandler{jwtSecret: cfg.jwtSecret})
-	mux.HandleFunc(http.MethodPost+" "+revokeRefreshTokenPath, revokeRefreshToken)
+	mux.HandleFunc(http.MethodPost+" "+revokeRefreshTokenPath, postRevokeRefreshToken)
+	mux.HandleFunc(http.MethodPost+" "+polkaWebhookPath, postPolkaWebhook)
 
 	server := http.Server{
 		Addr:    ":" + port,

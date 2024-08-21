@@ -12,9 +12,10 @@ import (
 )
 
 type internalUser struct {
-	ID       int
-	Email    string
-	Password []byte
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	Password    []byte `json:"password"`
+	IsChirpyRed bool   `json:"is_chirpy_red"`
 }
 
 type DB struct {
@@ -144,9 +145,10 @@ func (db *DB) CreateUser(email string, password string) (User, error) {
 	}
 
 	newInternalUser := internalUser{
-		ID:       newUserId,
-		Email:    email,
-		Password: hashedPassword,
+		ID:          newUserId,
+		Email:       email,
+		Password:    hashedPassword,
+		IsChirpyRed: false,
 	}
 
 	database.Users[newUserId] = newInternalUser
@@ -156,8 +158,9 @@ func (db *DB) CreateUser(email string, password string) (User, error) {
 	}
 
 	newUser := User{
-		ID:    newUserId,
-		Email: email,
+		ID:          newUserId,
+		Email:       email,
+		IsChirpyRed: false,
 	}
 
 	return newUser, nil
@@ -175,8 +178,9 @@ func (db *DB) GetUsers() ([]User, error) {
 
 	for _, user := range database.Users {
 		users = append(users, User{
-			ID:    user.ID,
-			Email: user.Email,
+			ID:          user.ID,
+			Email:       user.Email,
+			IsChirpyRed: user.IsChirpyRed,
 		})
 	}
 
@@ -202,8 +206,9 @@ func (db *DB) GetUserByEmailAndPassword(email string, password string) (User, er
 	}
 
 	user := User{
-		ID:    interUser.ID,
-		Email: interUser.Email,
+		ID:          interUser.ID,
+		Email:       interUser.Email,
+		IsChirpyRed: interUser.IsChirpyRed,
 	}
 
 	return user, nil
@@ -245,8 +250,9 @@ func (db *DB) UpdateUser(userID int, email string, password string) (User, error
 	}
 
 	updatedUser := User{
-		ID:    user.ID,
-		Email: user.Email,
+		ID:          user.ID,
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	return updatedUser, nil
@@ -319,6 +325,33 @@ func (db *DB) RevokeRefreshToken(token string) error {
 	return nil
 }
 
+func (db *DB) UpgradeUserToChirpyRed(userID int) error {
+
+	database, loadDBErr := db.loadDB()
+
+	if loadDBErr != nil {
+		return loadDBErr
+	}
+
+	user, exists := database.Users[userID]
+
+	if !exists {
+		return errors.New("User not found")
+	}
+
+	user.IsChirpyRed = true
+
+	database.Users[userID] = user
+
+	writeDBErr := db.writeDB(database)
+
+	if writeDBErr != nil {
+		return writeDBErr
+	}
+
+	return nil
+}
+
 func (db *DB) ensureDB() error {
 
 	defer db.mux.Unlock()
@@ -327,7 +360,6 @@ func (db *DB) ensureDB() error {
 	_, statErr := os.Stat(db.path)
 
 	if statErr == nil {
-		log.Println("DATABASE ALREADY EXISTS")
 		return nil
 	}
 
@@ -335,8 +367,6 @@ func (db *DB) ensureDB() error {
 		log.Printf("ensureDB 1 %s\n", statErr.Error())
 		return statErr
 	}
-
-	log.Println("DATABASE DOESN'T EXIST")
 
 	emptyDB := DBStructure{
 		Chirps:        make(map[int]Chirp),
@@ -355,8 +385,6 @@ func (db *DB) ensureDB() error {
 	if writeErr != nil {
 		return writeErr
 	}
-
-	log.Println("DATABASE CREATED")
 
 	return nil
 }
@@ -378,7 +406,6 @@ func (db *DB) loadDB() (DBStructure, error) {
 		return DBStructure{}, marshalErr
 	}
 
-	log.Printf("DB LOADED %v", database)
 	return database, nil
 }
 
@@ -398,7 +425,6 @@ func (db *DB) writeDB(dbStructure DBStructure) error {
 	if err != nil {
 		return err
 	}
-	log.Println("DB WRITTEN")
 
 	return nil
 }
