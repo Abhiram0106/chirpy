@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -65,7 +66,7 @@ func (db *DB) CreateChirp(body string, authorID int) (Chirp, error) {
 	return newChirp, nil
 }
 
-func (db *DB) GetChirps() ([]Chirp, error) {
+func (db *DB) GetChirps(authorID int) ([]Chirp, error) {
 
 	database, err := db.loadDB()
 
@@ -76,8 +77,18 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	chirps := []Chirp{}
 
 	for _, chirp := range database.Chirps {
-		chirps = append(chirps, chirp)
+		if authorID == 0 {
+			chirps = append(chirps, chirp)
+			continue
+		}
+		if authorID == chirp.AuthorID {
+			chirps = append(chirps, chirp)
+		}
 	}
+
+	sort.Slice(chirps, func(i, j int) bool {
+		return chirps[i].ID < chirps[j].ID
+	})
 
 	return chirps, nil
 }
@@ -183,6 +194,10 @@ func (db *DB) GetUsers() ([]User, error) {
 			IsChirpyRed: user.IsChirpyRed,
 		})
 	}
+
+	sort.Slice(users, func(i, j int) bool {
+		return users[i].ID < users[j].ID
+	})
 
 	return users, nil
 }

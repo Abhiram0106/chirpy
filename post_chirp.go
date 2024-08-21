@@ -116,7 +116,6 @@ func chirpProfanityFilter(chirp string) (cleanedChirp string) {
 	}
 
 	cleanedChirp = strings.Join(words, " ")
-	log.Println(cleanedChirp)
 
 	return
 }

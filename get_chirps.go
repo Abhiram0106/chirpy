@@ -10,6 +10,8 @@ import (
 
 func getChirps(w http.ResponseWriter, r *http.Request) {
 
+	authorIDString := r.URL.Query().Get("author_id")
+
 	DBConnection, dbConnectionErr := database.NewDB(databasePath)
 
 	if dbConnectionErr != nil {
@@ -37,7 +39,9 @@ func getChirps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chirps, getChirpsErr := DBConnection.GetChirps()
+	authorID, _ := strconv.Atoi(authorIDString)
+
+	chirps, getChirpsErr := DBConnection.GetChirps(authorID)
 
 	if getChirpsErr != nil {
 		log.Println(getChirpsErr.Error())
