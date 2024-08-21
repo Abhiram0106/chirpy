@@ -8,6 +8,7 @@ type timeToID struct {
 }
 
 type DBStructure struct {
+	NextChirpID   int                  `json:"next_chirp_id"`
 	Chirps        map[int]Chirp        `json:"chirps"`
 	Users         map[int]internalUser `json:"users"`
 	RefreshTokens map[string]timeToID  `json:"refresh_tokens"`

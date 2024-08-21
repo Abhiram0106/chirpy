@@ -18,14 +18,6 @@ func getChirps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chirps, getChirpsErr := DBConnection.GetChirps()
-
-	if getChirpsErr != nil {
-		log.Println(getChirpsErr.Error())
-		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
-		return
-	}
-
 	if chirpIDStr := r.PathValue(chirpIDWildCard); len(chirpIDStr) != 0 {
 		requestedChirpID, AtoiErr := strconv.Atoi(chirpIDStr)
 
@@ -34,16 +26,24 @@ func getChirps(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if requestedChirpID <= 0 || requestedChirpID > len(chirps) {
+		chirp, getChirpErr := DBConnection.GetChirpByID(requestedChirpID)
+
+		if getChirpErr != nil {
 			respondWithError(w, http.StatusNotFound, "No chirp found")
 			return
 		}
 
-		chirpOfID := chirps[requestedChirpID-1]
-
-		respondWithJSON(w, http.StatusFound, chirpOfID)
+		respondWithJSON(w, http.StatusOK, chirp)
 		return
 	}
 
-	respondWithJSON(w, http.StatusFound, chirps)
+	chirps, getChirpsErr := DBConnection.GetChirps()
+
+	if getChirpsErr != nil {
+		log.Println(getChirpsErr.Error())
+		respondWithError(w, http.StatusInternalServerError, "Something went wrong")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, chirps)
 }

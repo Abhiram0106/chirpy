@@ -38,7 +38,7 @@ func NewDB(path string) (*DB, error) {
 	return db, nil
 }
 
-func (db *DB) CreateChirp(body string) (Chirp, error) {
+func (db *DB) CreateChirp(body string, authorID int) (Chirp, error) {
 
 	database, err := db.loadDB()
 
@@ -46,18 +46,18 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 		return Chirp{}, err
 	}
 
-	newChirpId := len(database.Chirps) + 1
+	newChirpId := database.NextChirpID
+	database.NextChirpID++
 
 	newChirp := Chirp{
-		ID:   newChirpId,
-		Body: body,
+		ID:       newChirpId,
+		Body:     body,
+		AuthorID: authorID,
 	}
 
 	database.Chirps[newChirpId] = newChirp
 
-	writeDBError := db.writeDB(database)
-
-	if writeDBError != nil {
+	if writeDBError := db.writeDB(database); writeDBError != nil {
 		return Chirp{}, writeDBError
 	}
 
@@ -79,6 +79,48 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	}
 
 	return chirps, nil
+}
+
+func (db *DB) GetChirpByID(chirpID int) (Chirp, error) {
+
+	database, err := db.loadDB()
+
+	if err != nil {
+		return Chirp{}, err
+	}
+
+	chirp, exists := database.Chirps[chirpID]
+	if !exists {
+		return Chirp{}, errors.New("Chirp not found")
+	}
+
+	return chirp, nil
+}
+
+func (db *DB) DeleteChirpByID(chirpID int, authorID int) error {
+
+	database, err := db.loadDB()
+
+	if err != nil {
+		return err
+	}
+
+	chirp, exists := database.Chirps[chirpID]
+	if !exists {
+		return errors.New("Chirp not found")
+	}
+
+	if chirp.AuthorID != authorID {
+		return errors.New("Unauthorized")
+	}
+
+	delete(database.Chirps, chirpID)
+
+	if writeDBErr := db.writeDB(database); writeDBErr != nil {
+		return writeDBErr
+	}
+
+	return nil
 }
 
 func (db *DB) CreateUser(email string, password string) (User, error) {
@@ -109,9 +151,7 @@ func (db *DB) CreateUser(email string, password string) (User, error) {
 
 	database.Users[newUserId] = newInternalUser
 
-	writeDBError := db.writeDB(database)
-
-	if writeDBError != nil {
+	if writeDBError := db.writeDB(database); writeDBError != nil {
 		return User{}, writeDBError
 	}
 
@@ -302,6 +342,7 @@ func (db *DB) ensureDB() error {
 		Chirps:        make(map[int]Chirp),
 		Users:         make(map[int]internalUser),
 		RefreshTokens: make(map[string]timeToID),
+		NextChirpID:   1,
 	}
 
 	dbJson, marshalErr := json.Marshal(emptyDB)
