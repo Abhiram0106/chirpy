@@ -260,7 +260,7 @@ func (db *DB) AddRefreshToken(token string, expires_at time.Time, userID int) er
 		return loadDBErr
 	}
 
-	database.RefreshTokens[token] = timeToID{TokenExpiresAt: expires_at, UserID: userID}
+	database.RefreshTokens[token] = timeAndID{TokenExpiresAt: expires_at, UserID: userID}
 
 	dbWriteErr := db.writeDB(database)
 
@@ -341,7 +341,7 @@ func (db *DB) ensureDB() error {
 	emptyDB := DBStructure{
 		Chirps:        make(map[int]Chirp),
 		Users:         make(map[int]internalUser),
-		RefreshTokens: make(map[string]timeToID),
+		RefreshTokens: make(map[string]timeAndID),
 		NextChirpID:   1,
 	}
 
